@@ -23,7 +23,7 @@ single Bash command. Do not rewrite it, compress it into an `&&` chain, or
 debug it if it returns no work. Do not run `gc prime`, load skills, inspect
 runtime state, read repository files, explain the codebase, or gather any
 other context until a bead has been claimed. If the command prints
-`NO_ROUTED_WORK` or `CONFIG_REJECTED`, it has already drain-acked; stop
+`CLAIM_DRAIN` or `CONFIG_REJECTED`, it has already drain-acked; stop
 immediately and exit. If it prints `CLAIM_REJECTED`, the command is handling a
 claim race internally; wait for it to either claim a bead or drain on no work.
 
@@ -92,7 +92,11 @@ while true; do
   CLAIM_ROUTE="$(printf '%s' "$CLAIM_JSON" | json_pick route)"
 
   if [ "$CLAIM_ACTION" = "drain" ]; then
-    echo "NO_ROUTED_WORK"
+    CLAIM_REASON="$(printf '%s' "$CLAIM_JSON" | json_pick reason)"
+    printf 'CLAIM_DRAIN reason=%s\n' "$CLAIM_REASON"
+    if [ -n "$CLAIM_ERR_TEXT" ]; then
+      printf '%s\n' "$CLAIM_ERR_TEXT" >&2
+    fi
     gc runtime drain-ack
     exit 0
   fi
